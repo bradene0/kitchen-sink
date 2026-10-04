@@ -1010,7 +1010,35 @@ function smashMaybe(o){
   if(RM){o.state=4;return}                // reduced motion: fade out instead of flinging
   o.state=2;o.vx=(Math.random()<.5?-1:1)*W*(.5+Math.random()*.5);o.vy=-H*.8;o.vr=(Math.random()-.5)*16;
 }
-
+// ===================== RESTART BUTTON =====================
+(function(){
+  const css=document.createElement('style');
+  css.textContent='#restart{position:fixed;right:calc(10px + env(safe-area-inset-right,0px));font-weight:900;font-size:13px;line-height:1;'+
+    'color:var(--cream);background:var(--tom);border:2.5px solid var(--ink);border-radius:11px;padding:8px 11px;box-shadow:0 3px 0 var(--ink);transition:opacity .25s}'+
+    'body.intro #restart{opacity:0;pointer-events:none}';
+  document.head.appendChild(css);
+  const b=document.createElement('button');b.id='restart';b.type='button';b.textContent='Restart';
+  document.body.appendChild(b);
+  let armed=0;
+  function place(){ // bottom-right corner if there is room beside the shelf, otherwise just above it
+    const sh=elShelf.getBoundingClientRect(),last=elShelf.lastElementChild.getBoundingClientRect();
+    b.style.bottom=window.innerWidth-last.right>=b.offsetWidth+24?'calc(12px + env(safe-area-inset-bottom,0px))':Math.round(window.innerHeight-sh.top+8)+'px';
+  }
+  place();window.addEventListener('resize',function(){setTimeout(place,200)});
+  b.addEventListener('click',function(){
+    if(!armed){ // first tap asks, second tap within 2.5 s restarts
+      b.textContent='Sure?';armed=setTimeout(function(){armed=0;b.textContent='Restart'},2500);return;
+    }
+    clearTimeout(armed);armed=0;b.textContent='Restart';
+    release(null);
+    for(const k in CH){CH[k]=false;$('c-'+k).textContent=''}   // cheats off
+    cbuf='';
+    st.reg={};st.done={};store.save();                         // forget cleaned regions and objects (best times are kept)
+    for(const o of OBJ){o.m=null;o.msg=''}                     // every object is rebuilt dirty the next time it is selected
+    selectObj(0);
+    toast('Everything is filthy again');
+  });
+})();
 
 // ===================== TESTS =====================
 function runTests(){
